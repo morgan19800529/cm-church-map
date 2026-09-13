@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>清迈教会与旅居生活地图 | Chiang Mai Church & Sojourner Life</title>
   
   <!-- Tailwind CSS & FontAwesome -->
@@ -16,124 +16,123 @@
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .leaflet-popup-content-wrapper { border-radius: 14px; padding: 4px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); }
+    .leaflet-popup-content-wrapper { border-radius: 16px; padding: 4px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); }
     .leaflet-popup-content { margin: 8px 12px; line-height: 1.45; }
+    /* 防止移动端点击输入框缩放页面 */
+    input, select, textarea { font-size: 16px !important; }
+    @media (min-width: 768px) {
+      input, select, textarea { font-size: 12px !important; }
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen w-screen flex flex-col overflow-hidden font-sans">
+<body class="bg-slate-100 text-slate-800 h-[100dvh] w-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- 顶部状态栏 -->
+  <!-- 1. 顶部紧凑导航 -->
   <header class="bg-white border-b border-slate-200 z-30 shadow-xs shrink-0">
-    <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-100">
-          <i class="fa-solid fa-compass text-base"></i>
+    <div class="px-3.5 py-2 flex justify-between items-center max-w-7xl mx-auto">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-sm">
+          <i class="fa-solid fa-compass text-sm"></i>
         </div>
         <div>
-          <h1 class="font-bold text-slate-900 text-base md:text-lg leading-tight flex items-center gap-2">
-            清迈教会与旅居生活地图
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-normal">18堂全景版</span>
-          </h1>
-          <p class="text-xs text-slate-400">慢调旅居 · 周末活动 · 医疗配套 · 陪读走廊</p>
+          <h1 class="font-bold text-slate-900 text-sm md:text-base leading-tight">清迈教会生活地图</h1>
+          <p class="text-[10px] text-slate-400">慢调旅居 · 周末活动 · 医疗配套</p>
         </div>
       </div>
       
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5">
         <button onclick="locateUser()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1 font-medium">
-          <i class="fa-solid fa-location-crosshairs text-emerald-600"></i> <span class="hidden sm:inline">我的位置</span>测距
+          <i class="fa-solid fa-location-crosshairs text-emerald-600"></i> 定位
         </button>
-        <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1">
-          <i class="fa-solid fa-circle-plus"></i> 提报/纠错
+        <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-sm transition">
+          提报
         </button>
       </div>
     </div>
 
-    <!-- 偏好模式切换：全部堂会放首位并默认高亮 -->
-    <div class="bg-emerald-50/50 border-t border-emerald-100/60 px-4 py-1.5 flex items-center gap-2 text-xs overflow-x-auto no-scrollbar">
-      <span class="text-emerald-950 font-semibold shrink-0">快捷看：</span>
-      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0">全部堂会 (18)</button>
-      <button onclick="setPersonaMode('saturday')" id="tab-saturday" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">🎉 周六有活动</button>
-      <button onclick="setPersonaMode('sojourner')" id="tab-sojourner" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">🌴 慢调旅居 (母语/近医院)</button>
-      <button onclick="setPersonaMode('family')" id="tab-family" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">👨‍👩‍👧 陪读家庭 (国际学校走廊)</button>
+    <!-- 偏好横向滑动栏 -->
+    <div class="bg-emerald-50/50 border-t border-emerald-100/60 px-3 py-1.5 flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar">
+      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0 text-xs">全部堂会 (18)</button>
+      <button onclick="setPersonaMode('saturday')" id="tab-saturday" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0 text-xs">🎉 周六活动</button>
+      <button onclick="setPersonaMode('sojourner')" id="tab-sojourner" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0 text-xs">🌴 慢调旅居</button>
+      <button onclick="setPersonaMode('family')" id="tab-family" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0 text-xs">👨‍👩‍👧 陪读家庭</button>
     </div>
 
-    <!-- 搜索与区域过滤 -->
-    <div class="bg-slate-50 border-t border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 text-xs">
-      <div class="relative flex-1 min-w-[150px]">
-        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400"></i>
+    <!-- 搜索与下拉 -->
+    <div class="bg-slate-50 border-t border-slate-200 px-3 py-1.5 flex items-center gap-2">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
         <input 
           type="text" 
           id="searchInput" 
           placeholder="搜堂会名、路名、医院、活动..." 
-          class="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          class="w-full pl-7 pr-3 py-1 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
           oninput="applyFilter()"
         />
       </div>
 
-      <select id="districtFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 focus:outline-none">
-        <option value="">所有区域</option>
-        <option value="古城">古城区 (Old City)</option>
-        <option value="瓦特盖特">瓦特盖特/法汉/麦考密克</option>
-        <option value="长康路">长康路/萍河沿岸</option>
-        <option value="湄海">湄海区 (Mae Hia)</option>
-        <option value="杭东">杭东区 (Hang Dong)</option>
-        <option value="宁曼路">宁曼路/清大周边</option>
-        <option value="山甘烹">山甘烹区 (San Kamphaeng)</option>
-      </select>
-
-      <select id="langFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 focus:outline-none">
-        <option value="">崇拜语言</option>
-        <option value="普通话">普通话/国语</option>
-        <option value="潮州话">潮州话/闽南语</option>
-        <option value="粤语">粤语/广东话</option>
-        <option value="英语">纯英语为主</option>
+      <select id="districtFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 text-xs focus:outline-none">
+        <option value="">全部区域</option>
+        <option value="古城">古城区</option>
+        <option value="瓦特盖特">瓦特盖特/麦考密克</option>
+        <option value="长康路">长康路/萍河</option>
+        <option value="湄海">湄海区</option>
+        <option value="杭东">杭东区</option>
+        <option value="宁曼路">宁曼/清大</option>
+        <option value="山甘烹">山甘烹</option>
       </select>
     </div>
   </header>
 
-  <!-- 主布局：列表 + 地图 -->
-  <div class="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative">
+  <!-- 2. 主展示区域：自适应切换 -->
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
     
-    <aside class="w-full md:w-[440px] h-[48%] md:h-full bg-white border-t md:border-t-0 md:border-r border-slate-200 flex flex-col z-10 shrink-0">
-      <div class="px-4 py-2 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 bg-slate-50">
-        <span id="churchCount">正在加载清迈堂会数据...</span>
-        <span class="text-[11px] text-slate-400">点击卡片联动地图</span>
+    <!-- 列表视图 -->
+    <aside id="listView" class="w-full md:w-[440px] h-full bg-white flex flex-col z-10 shrink-0">
+      <div class="px-3.5 py-1.5 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 bg-slate-50">
+        <span id="churchCount" class="font-medium">加载中...</span>
+        <span class="text-[11px] text-slate-400">点击卡片看详情/打车</span>
       </div>
 
-      <div id="churchCardList" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-3 space-y-3 no-scrollbar">
+      <div id="churchCardList" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2.5 space-y-2.5 pb-24 md:pb-6">
         <!-- 动态卡片 -->
       </div>
     </aside>
 
-    <main class="flex-1 h-[52%] md:h-full relative z-0 bg-slate-200">
+    <!-- 地图视图 -->
+    <main id="mapView" class="hidden md:block flex-1 h-full relative z-0 bg-slate-200">
       <div id="map" class="w-full h-full"></div>
     </main>
   </div>
 
-  <!-- 纠错提报弹窗 -->
+  <!-- 3. 手机端专属：底部浮动切换胶囊 -->
+  <div class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <button onclick="toggleMobileView()" id="mobileToggleBtn" class="bg-slate-900/90 backdrop-blur text-white px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-semibold active:scale-95 transition tracking-wide border border-white/10">
+      <i class="fa-solid fa-map text-emerald-400"></i>
+      <span id="toggleText">切换到大地图模式</span>
+    </button>
+  </div>
+
+  <!-- 4. 纠错提报弹窗 -->
   <div id="feedbackModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white rounded-2xl max-w-md w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
           <i class="fa-solid fa-pen-to-square text-emerald-600"></i> 提交/纠错堂会信息
         </h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg px-2">✕</button>
       </div>
 
-      <form onsubmit="handleFeedbackSubmit(event)" class="space-y-3 text-xs">
+      <form onsubmit="handleFeedbackSubmit(event)" class="space-y-2.5 text-xs">
         <div>
-          <label class="block font-medium text-slate-700 mb-1">堂会/团契名称</label>
-          <input required type="text" id="fbName" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：清迈某某教会" />
+          <label class="block font-medium text-slate-700 mb-1">堂会名称</label>
+          <input required type="text" id="fbName" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50" placeholder="如：清迈某某教会" />
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">补充或更正详情（时间、活动、电话等）</label>
-          <textarea required id="fbContent" rows="3" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：周六上午有赞美操；主日时间改为上午 10:00 等"></textarea>
+          <label class="block font-medium text-slate-700 mb-1">补充详情（时间、周六活动等）</label>
+          <textarea required id="fbContent" rows="3" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50" placeholder="如：周六上午有长者聚会等"></textarea>
         </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">您的微信/Line/电话（选填）</label>
-          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="方便同工核准信息" />
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600">取消</button>
           <button type="submit" class="px-4 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">确认提交</button>
         </div>
@@ -142,7 +141,6 @@
   </div>
 
   <script>
-    // 完整 18 家独立堂会名单与完整详情
     const churches = [
       {
         id: 1,
@@ -156,14 +154,14 @@
         category: "老牌华人堂 (70年历史)",
         tel: "053-242-040",
         languages: ["普通话", "潮州话", "泰语"],
-        translation: "早堂泰语配译 / 13:30纯中文主日堂",
+        translation: "早堂泰配中 / 13:30纯中文堂",
         time: "周日 10:00 (泰配中) / 13:30 (纯中文主日)",
-        saturdayActivity: "周六上午 09:30 常青长者赞美操与国语团契；下午诗班排练",
+        saturdayActivity: "周六上午 09:30 长者赞美操与国语团契；下午诗班排练",
         hasSaturday: true,
         sojournerFriendly: true,
         hospitalNear: "距 McCormick 医院 1.0km",
         kids: true,
-        tips: "清迈华人核心老堂，华人归属感极强，周六常青活动丰富，下午有纯中文崇拜。"
+        tips: "清迈核心老堂，归属感强，长者活动丰富，午后有纯中文崇拜。"
       },
       {
         id: 2,
@@ -179,12 +177,12 @@
         languages: ["普通话", "英语"],
         translation: "全中文独立讲道与敬拜",
         time: "周日 10:00 - 11:30",
-        saturdayActivity: "周六上午 10:00 亲子兴趣工作坊/生活沙龙；下午青少年敬拜",
+        saturdayActivity: "周六上午 10:00 亲子兴趣沙龙；下午青少年敬拜",
         hasSaturday: true,
         sojournerFriendly: true,
-        hospitalNear: "距曼谷医院清迈分院 12分钟车程",
+        hospitalNear: "距曼谷医院 12分钟车程",
         kids: true,
-        tips: "西南区枢纽，有大量随迁长辈与陪读家庭，大厅宽敞有空调，专属停车场。"
+        tips: "西南区枢纽，随迁长辈与陪读家庭密集，大厅宽敞空调好，有大型停车场。"
       },
       {
         id: 3,
@@ -219,14 +217,14 @@
         category: "华语/粤语旅居堂",
         tel: "",
         languages: ["普通话", "粤语", "泰语"],
-        translation: "国语/粤语亲切交流",
+        translation: "国语/粤语交流",
         time: "周日 10:00 - 11:30",
         saturdayActivity: "周六傍晚 17:30 旅居家庭爱筵聚餐与生活互助答疑",
         hasSaturday: true,
         sojournerFriendly: true,
-        hospitalNear: "距曼谷医院清迈分院 2.5km",
+        hospitalNear: "距曼谷医院 2.5km",
         kids: false,
-        tips: "适合讲粤语和国语的旅居朋友，周六傍晚常有爱筵聚餐，如同家人般互助。"
+        tips: "适合讲粤语和普通话的长住旅居朋友，周六常有聚餐，如家人般互助。"
       },
       {
         id: 5,
@@ -237,12 +235,12 @@
         lat: 18.6920,
         lng: 98.9180,
         district: "杭东",
-        category: "华人陪读与旅居团契",
+        category: "华人陪读旅居团契",
         tel: "",
         languages: ["普通话"],
         translation: "全中文普通话",
         time: "周日 10:00 - 11:30",
-        saturdayActivity: "周六上午 09:00 杭东长者早市结伴买菜；下午绘本亲子交流",
+        saturdayActivity: "周六上午 09:00 杭东早市结伴买菜；下午绘本亲子交流",
         hasSaturday: true,
         sojournerFriendly: true,
         hospitalNear: "杭东核心医疗区",
@@ -263,7 +261,7 @@
         languages: ["泰语", "英语", "普通话互助"],
         translation: "早堂泰语 / 午堂英语",
         time: "周日 09:30 (泰) / 11:00 (英)",
-        saturdayActivity: "周六上午 10:00 青年诗班排练；百年花园开放漫步灵修",
+        saturdayActivity: "周六上午 10:00 青年诗班排练；百年花园开放漫步",
         hasSaturday: true,
         sojournerFriendly: true,
         hospitalNear: "紧邻 McCormick Hospital (步行即达)",
@@ -284,12 +282,12 @@
         languages: ["英语"],
         translation: "英文逐节讲道",
         time: "周日 10:00 - 11:45",
-        saturdayActivity: "周六下午 15:30 青少年户外草坪互动；家庭聚餐交流",
+        saturdayActivity: "周六下午 15:30 青少年户外草坪互动；家庭聚餐",
         hasSaturday: true,
         sojournerFriendly: true,
         hospitalNear: "距杭东综合医院 10分钟",
         kids: true,
-        tips: "独栋平房庭院无台阶，欧美与华人国际家庭汇聚，少儿托管系统完善。"
+        tips: "独栋平房庭院无台阶，欧美与华人国际家庭汇聚，少儿托管健全。"
       },
       {
         id: 8,
@@ -302,7 +300,7 @@
         district: "古城",
         category: "传统福音派名堂",
         tel: "",
-        languages: ["泰语", "英语", "普通话翻译"],
+        languages: ["泰语", "英语", "普通话互助"],
         translation: "泰英双语配中文互助",
         time: "周日 09:30 - 11:00",
         saturdayActivity: "周六上午 10:00 泰语基础生活对话课/义工辅导",
@@ -345,12 +343,12 @@
         category: "国际跨文化堂",
         tel: "",
         languages: ["英语"],
-        translation: "全英文现代国际礼拜",
+        translation: "全英文现代礼拜",
         time: "周日 10:30 - 12:00",
         saturdayActivity: "周六下午 15:00 国际青年查经与英语沙龙",
         hasSaturday: true,
         sojournerFriendly: false,
-        hospitalNear: "距曼谷医院清迈分院 15分钟",
+        hospitalNear: "距曼谷医院 15分钟",
         kids: true,
         tips: "宣教士与数字游民家庭密集，英文环境纯正。"
       },
@@ -394,7 +392,7 @@
         sojournerFriendly: true,
         hospitalNear: "距清迈第一综合医院 1.0km",
         kids: false,
-        tips: "清迈天主教核心大教堂，建筑雄伟肃穆，适合天主教背景的长者安静祈祷与默想。"
+        tips: "天主教核心大教堂，哥特建筑雄伟肃穆，适合天主教背景的长者安静祈祷。"
       },
       {
         id: 13,
@@ -408,14 +406,14 @@
         category: "大学神学院团契",
         tel: "",
         languages: ["普通话", "英语", "泰语"],
-        translation: "中文青年与神学交流",
+        translation: "中文青年神学交流",
         time: "周日 10:00 - 11:30",
         saturdayActivity: "周六下午 14:00 中文神学/圣经研讨沙龙",
         hasSaturday: true,
         sojournerFriendly: true,
         hospitalNear: "距 Bangkok Hospital 仅 800米 (极近)",
         kids: false,
-        tips: "紧邻清迈曼谷医院与西北大学校园，绿地平整开阔，极适宜就医与校园散步。"
+        tips: "紧邻清迈曼谷医院与西北大学，绿地开阔，极适宜就医与校园散步。"
       },
       {
         id: 14,
@@ -436,7 +434,7 @@
         sojournerFriendly: true,
         hospitalNear: "距山甘烹综合医院 3km",
         kids: true,
-        tips: "很多在清迈东郊手工艺村和山甘烹独栋别墅旅居的长辈会选择在此聚会，节奏闲适安宁。"
+        tips: "东郊手工艺村与独栋别墅旅居的长辈常在此聚会，田园闲适安宁。"
       },
       {
         id: 15,
@@ -457,7 +455,7 @@
         sojournerFriendly: true,
         hospitalNear: "距清迈大学联属医院 1.0km",
         kids: true,
-        tips: "素帖山脚下的小规模华人温馨堂会，长者与年轻人互动密切，周间常有生活探访。"
+        tips: "素帖山脚下的小规模华人温馨堂会，长者与年轻人互动密切，人情味浓。"
       },
       {
         id: 16,
@@ -478,7 +476,7 @@
         sojournerFriendly: true,
         hospitalNear: "距清迈兰医院 1.5km",
         kids: true,
-        tips: "大楼设施齐备有电梯，适合注重祈祷、希望为身体健康和家庭代祷的旅居信徒。"
+        tips: "大楼设施齐备有电梯，适合注重祈祷、希望代祷的旅居信徒。"
       },
       {
         id: 17,
@@ -527,7 +525,8 @@
     let map;
     let markers = [];
     let userMarker = null;
-    let currentPersona = 'all'; // 默认直接显示全部 18 家
+    let currentPersona = 'all';
+    let isMapModeOnMobile = false;
 
     function initMap() {
       map = L.map('map', { zoomControl: false }).setView([18.7883, 98.9853], 12);
@@ -542,6 +541,28 @@
       setPersonaMode('all');
     }
 
+    function toggleMobileView() {
+      const listView = document.getElementById("listView");
+      const mapView = document.getElementById("mapView");
+      const toggleText = document.getElementById("toggleText");
+      const toggleIcon = document.querySelector("#mobileToggleBtn i");
+
+      isMapModeOnMobile = !isMapModeOnMobile;
+
+      if (isMapModeOnMobile) {
+        listView.classList.add("hidden");
+        mapView.classList.remove("hidden");
+        toggleText.textContent = "返回查看列表";
+        toggleIcon.className = "fa-solid fa-list-ul text-emerald-400";
+        setTimeout(() => map.invalidateSize(), 200);
+      } else {
+        mapView.classList.add("hidden");
+        listView.classList.remove("hidden");
+        toggleText.textContent = "切换到大地图模式";
+        toggleIcon.className = "fa-solid fa-map text-emerald-400";
+      }
+    }
+
     function setPersonaMode(mode) {
       currentPersona = mode;
       
@@ -549,9 +570,9 @@
         const btn = document.getElementById(`tab-${m}`);
         if (btn) {
           if (m === mode) {
-            btn.className = "px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0";
+            btn.className = "px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0 text-xs";
           } else {
-            btn.className = "px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0";
+            btn.className = "px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0 text-xs";
           }
         }
       });
@@ -566,23 +587,17 @@
       dataList.forEach(item => {
         const marker = L.marker([item.lat, item.lng], { title: item.nameZh }).addTo(map);
 
-        const satBadge = item.hasSaturday 
-          ? `<span class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded font-medium">📅 周六活动</span>` 
-          : '';
-
         const popupContent = `
-          <div class="text-xs">
-            <div class="font-bold text-slate-900 text-sm mb-0.5">${item.nameZh}</div>
-            <div class="text-slate-500 text-[11px] mb-1">${item.nameEn}</div>
-            <div class="mb-1.5">${satBadge}</div>
-            <div class="text-emerald-800 font-medium mb-1"><i class="fa-regular fa-clock"></i> <b>主日：</b>${item.time}</div>
-            ${item.hasSaturday ? `<div class="text-amber-700 font-medium mb-1.5"><i class="fa-solid fa-calendar-check"></i> <b>周六：</b>${item.saturdayActivity}</div>` : ''}
+          <div class="text-xs max-w-[260px]">
+            <div class="font-bold text-slate-900 text-sm mb-1">${item.nameZh}</div>
+            <div class="text-emerald-800 font-semibold mb-1"><i class="fa-regular fa-clock"></i> ${item.time}</div>
+            ${item.hasSaturday ? `<div class="text-amber-700 text-[11px] mb-1.5 leading-snug"><i class="fa-solid fa-star text-amber-500"></i> ${item.saturdayActivity}</div>` : ''}
             <div class="text-slate-500 text-[11px] mb-2"><i class="fa-solid fa-hospital text-rose-500"></i> ${item.hospitalNear}</div>
-            <button onclick="copyToClipboard('${item.addressTh}', '泰文打车地址')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-1.5 rounded text-xs font-medium transition mb-1">
+            <button onclick="copyToClipboard('${item.addressTh}', '泰文打车地址')" class="w-full bg-emerald-50 text-emerald-900 py-1.5 rounded-lg text-xs font-semibold mb-1.5 border border-emerald-200 active:bg-emerald-100">
               <i class="fa-regular fa-copy"></i> 复制泰文打车地址
             </button>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded text-xs font-medium">
-              导航前往
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="block w-full text-center bg-slate-900 text-white py-1.5 rounded-lg text-xs font-semibold">
+              导航路线
             </a>
           </div>
         `;
@@ -595,78 +610,73 @@
     function renderCards(dataList) {
       const container = document.getElementById("churchCardList");
       const countEl = document.getElementById("churchCount");
-      countEl.textContent = `共匹配 ${dataList.length} 家堂会与活动`;
+      countEl.textContent = `共收录 ${dataList.length} 家堂会`;
 
       if (dataList.length === 0) {
         container.innerHTML = `
           <div class="py-12 text-center text-slate-400 text-xs">
             <i class="fa-solid fa-compass text-2xl mb-2 text-emerald-500"></i>
-            <p>该偏好下暂无匹配，可切换至“全部堂会”浏览</p>
+            <p>暂无符合筛选条件的堂会</p>
           </div>
         `;
         return;
       }
 
       container.innerHTML = dataList.map(item => `
-        <div id="card-${item.id}" onclick="focusChurch(${item.id})" class="bg-white border ${item.hasSaturday ? 'border-amber-200 bg-amber-50/15' : 'border-slate-200'} rounded-2xl p-3.5 hover:border-emerald-400 transition cursor-pointer shadow-xs">
+        <div id="card-${item.id}" onclick="focusChurchFromCard(${item.id})" class="bg-white border ${item.hasSaturday ? 'border-amber-200 bg-amber-50/10' : 'border-slate-200'} rounded-2xl p-3 hover:border-emerald-400 transition cursor-pointer shadow-xs active:bg-slate-50">
           <div class="flex justify-between items-start mb-1.5">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[11px] bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded">${item.category}</span>
+              <span class="text-[10px] bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded">${item.category}</span>
               ${item.hasSaturday ? '<span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded"><i class="fa-solid fa-star text-amber-600"></i> 周六活动</span>' : ''}
-              ${item.sojournerFriendly ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 font-medium px-1.5 py-0.5 rounded">慢调旅居</span>' : ''}
             </div>
-            <span class="text-xs text-slate-500 flex items-center gap-1 shrink-0">
+            <span class="text-xs text-slate-500 flex items-center gap-1 shrink-0 font-medium">
               <i class="fa-solid fa-location-dot text-rose-500"></i> ${item.district}
-              ${item.distance ? `<b class="text-emerald-700 ml-1">(${item.distance}km)</b>` : ''}
+              ${item.distance ? `<b class="text-emerald-700 ml-0.5">(${item.distance}km)</b>` : ''}
             </span>
           </div>
 
           <h3 class="font-bold text-slate-900 text-base leading-snug">${item.nameZh}</h3>
-          <p class="text-xs text-slate-400 mb-2">${item.nameEn}</p>
+          <p class="text-[11px] text-slate-400 mb-2">${item.nameEn}</p>
 
-          <div class="space-y-2 text-xs text-slate-700 bg-white/95 p-2.5 rounded-xl border border-slate-100 mb-2.5">
+          <div class="space-y-1.5 text-xs text-slate-700 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 mb-2">
             ${item.hasSaturday ? `
-              <div class="flex items-start gap-2 bg-amber-50 p-2 rounded-lg border border-amber-100/80">
-                <i class="fa-solid fa-calendar-day text-amber-600 mt-0.5 w-3.5 shrink-0"></i>
-                <div>
-                  <span class="font-bold text-amber-950">周六活动：</span>
-                  <span class="text-amber-900 leading-relaxed">${item.saturdayActivity}</span>
-                </div>
+              <div class="text-amber-900 font-medium bg-amber-100/50 p-1.5 rounded border border-amber-200/50">
+                <i class="fa-solid fa-calendar-day text-amber-600 mr-1"></i><b>周六：</b>${item.saturdayActivity}
               </div>
             ` : ''}
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <i class="fa-regular fa-clock text-emerald-600 w-3.5 shrink-0"></i>
-              <span><b>主日聚会：</b>${item.time}</span>
+              <span><b>主日：</b>${item.time}</span>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <i class="fa-solid fa-language text-indigo-600 w-3.5 shrink-0"></i>
-              <span><b>语言交流：</b>${item.languages.join("、")} <span class="text-slate-400">(${item.translation})</span></span>
+              <span><b>语言：</b>${item.languages.join("、")} <span class="text-slate-400">(${item.translation})</span></span>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <i class="fa-solid fa-hospital text-rose-500 w-3.5 shrink-0"></i>
-              <span class="text-rose-700"><b>就医配套：</b>${item.hospitalNear}</span>
+              <span class="text-rose-700"><b>就医：</b>${item.hospitalNear}</span>
             </div>
 
             ${item.tel ? `
-              <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+              <div class="flex items-center gap-1.5 pt-1 border-t border-slate-200/50">
                 <i class="fa-solid fa-phone text-emerald-600 w-3.5 shrink-0"></i>
-                <a href="tel:${item.tel}" onclick="event.stopPropagation();" class="text-emerald-700 font-medium hover:underline">堂会电话：${item.tel}</a>
+                <a href="tel:${item.tel}" onclick="event.stopPropagation();" class="text-emerald-700 font-semibold underline">拨打电话：${item.tel}</a>
               </div>
             ` : ''}
           </div>
 
-          <p class="text-[11px] text-slate-500 mb-3 leading-relaxed">
+          <p class="text-[11px] text-slate-500 mb-2.5 leading-relaxed">
             <i class="fa-regular fa-comment-dots text-slate-400"></i> ${item.tips}
           </p>
 
-          <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
-            <button onclick="event.stopPropagation(); copyToClipboard('${item.addressTh}', '泰文打车地址')" class="flex-1 py-2 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-lg text-xs transition flex items-center justify-center gap-1 font-medium border border-emerald-200">
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="event.stopPropagation(); copyToClipboard('${item.addressTh}', '泰文打车地址')" class="py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-xl text-xs transition flex items-center justify-center gap-1 font-semibold border border-emerald-200 active:scale-95">
               <i class="fa-solid fa-taxi text-emerald-700"></i> 复制泰文打车
             </button>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" onclick="event.stopPropagation();" class="flex-1 py-2 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs text-center font-medium transition flex items-center justify-center gap-1">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" onclick="event.stopPropagation();" class="py-2.5 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs text-center font-semibold transition flex items-center justify-center gap-1 active:scale-95">
               <i class="fa-solid fa-diamond-turn-right text-emerald-400"></i> 导航前往
             </a>
           </div>
@@ -674,25 +684,23 @@
       `).join("");
     }
 
-    function focusChurch(id) {
-      const church = churches.find(c => c.id === id);
-      const marker = markers.find(m => m.churchId === id);
-      if (church && marker) {
-        map.flyTo([church.lat, church.lng], 14, { duration: 1 });
-        marker.openPopup();
-
-        document.querySelectorAll('[id^="card-"]').forEach(el => el.classList.remove('ring-2', 'ring-emerald-500'));
-        const activeCard = document.getElementById(`card-${id}`);
-        if (activeCard) {
-          activeCard.classList.add('ring-2', 'ring-emerald-500');
-        }
+    function focusChurchFromCard(id) {
+      if (window.innerWidth < 768) {
+        toggleMobileView();
       }
+      setTimeout(() => {
+        const church = churches.find(c => c.id === id);
+        const marker = markers.find(m => m.churchId === id);
+        if (church && marker) {
+          map.flyTo([church.lat, church.lng], 14, { duration: 1 });
+          marker.openPopup();
+        }
+      }, 250);
     }
 
     function applyFilter() {
       const search = document.getElementById("searchInput").value.trim().toLowerCase();
       const district = document.getElementById("districtFilter").value;
-      const lang = document.getElementById("langFilter").value;
 
       const filtered = churches.filter(item => {
         if (currentPersona === 'saturday' && !item.hasSaturday) return false;
@@ -707,9 +715,8 @@
           item.district.toLowerCase().includes(search);
 
         const matchesDistrict = !district || item.district.includes(district);
-        const matchesLang = !lang || item.languages.includes(lang);
 
-        return matchesSearch && matchesDistrict && matchesLang;
+        return matchesSearch && matchesDistrict;
       });
 
       renderMarkers(filtered);
@@ -718,7 +725,7 @@
 
     function locateUser() {
       if (!navigator.geolocation) {
-        alert("浏览器不支持定位");
+        alert("手机暂不支持定位功能");
         return;
       }
       navigator.geolocation.getCurrentPosition(
@@ -736,16 +743,15 @@
             fillOpacity: 0.9
           }).addTo(map).bindPopup("<b>您所在的位置</b>").openPopup();
 
-          map.setView([uLat, uLng], 13);
-
           churches.forEach(c => {
             c.distance = calculateDistance(uLat, uLng, c.lat, c.lng).toFixed(1);
           });
           churches.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
           applyFilter();
+          alert("已定位成功！堂会已按与您的距离由近到远重新排序。");
         },
         err => {
-          alert("无法获取定位，请确认手机已开启 GPS 定位权限。");
+          alert("无法获取定位权限，请在手机设置中允许浏览器访问位置。");
         }
       );
     }
@@ -775,7 +781,7 @@
     }
     function handleFeedbackSubmit(e) {
       e.preventDefault();
-      alert("感谢提供信息！同工核实后会同步至清迈周六与旅居活动地图。");
+      alert("感谢提报！同工会尽快核准更新。");
       closeModal();
     }
 
