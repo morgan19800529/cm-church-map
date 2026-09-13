@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
-  <!-- Leaflet 地图引擎 (全球免Key极速加载) -->
+  <!-- Leaflet 地图引擎 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -22,7 +22,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen w-screen flex flex-col overflow-hidden font-sans">
 
-  <!-- 顶部状态与快速偏好栏 -->
+  <!-- 顶部状态栏与偏好切换 -->
   <header class="bg-white border-b border-slate-200 z-30 shadow-xs shrink-0">
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
@@ -32,9 +32,9 @@
         <div>
           <h1 class="font-bold text-slate-900 text-base md:text-lg leading-tight flex items-center gap-2">
             清迈教会与旅居生活地图
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-normal">公网可用版</span>
+            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-normal">18堂全收录</span>
           </h1>
-          <p class="text-xs text-slate-400">慢调旅居 · 陪读家庭 · 周末活动 · 医疗配套</p>
+          <p class="text-xs text-slate-400">慢调旅居 · 周末活动 · 医疗配套 · 陪读走廊</p>
         </div>
       </div>
       
@@ -54,7 +54,7 @@
       <button onclick="setPersonaMode('saturday')" id="tab-saturday" class="px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0">🎉 周六有活动</button>
       <button onclick="setPersonaMode('sojourner')" id="tab-sojourner" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">🌴 慢调旅居 (母语/近医院)</button>
       <button onclick="setPersonaMode('family')" id="tab-family" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">👨‍👩‍👧 陪读家庭 (国际学校走廊)</button>
-      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">全部堂会</button>
+      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">全部堂会 (18)</button>
     </div>
 
     <!-- 搜索与区域过滤 -->
@@ -78,6 +78,7 @@
         <option value="湄海">湄海区 (Mae Hia)</option>
         <option value="杭东">杭东区 (Hang Dong)</option>
         <option value="宁曼路">宁曼路/清大周边</option>
+        <option value="山甘烹">山甘烹区 (San Kamphaeng)</option>
       </select>
 
       <select id="langFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 focus:outline-none">
@@ -93,7 +94,6 @@
   <!-- 主布局：列表 + 地图 -->
   <div class="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative">
     
-    <!-- 左侧列表 -->
     <aside class="w-full md:w-[440px] h-[48%] md:h-full bg-white border-t md:border-t-0 md:border-r border-slate-200 flex flex-col z-10 shrink-0">
       <div class="px-4 py-2 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 bg-slate-50">
         <span id="churchCount">正在加载清迈堂会数据...</span>
@@ -105,7 +105,6 @@
       </div>
     </aside>
 
-    <!-- 右侧大地图 -->
     <main class="flex-1 h-[52%] md:h-full relative z-0 bg-slate-200">
       <div id="map" class="w-full h-full"></div>
     </main>
@@ -131,8 +130,8 @@
           <textarea required id="fbContent" rows="3" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：周六上午有赞美操；主日时间改为上午 10:00 等"></textarea>
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">您的微信/Line/电话（选填）</label>
-          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="方便同工核准信息" />
+          <label class="block font-medium text-slate-700 mb-1">您的联系方式（选填）</label>
+          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="微信/Line/电话，方便同工核准信息" />
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600">取消</button>
@@ -143,7 +142,7 @@
   </div>
 
   <script>
-    // 清迈核心可用堂会数据
+    // 完整 18 家堂会与聚会点数据
     const churches = [
       {
         id: 1,
@@ -164,7 +163,7 @@
         sojournerFriendly: true,
         hospitalNear: "距 McCormick 医院 1.0km",
         kids: true,
-        tips: "清迈极具代表性的华人老堂，华人归属感强，周六常青活动丰富，下午有纯中文崇拜。"
+        tips: "清迈华人核心老堂，华人归属感极强，周六常青活动丰富，下午有纯中文崇拜。"
       },
       {
         id: 2,
@@ -185,7 +184,7 @@
         sojournerFriendly: true,
         hospitalNear: "距曼谷医院清迈分院 12分钟车程",
         kids: true,
-        tips: "西南区枢纽，有大量随迁父母长辈与陪读家庭，大厅宽敞有空调，专属停车场。"
+        tips: "西南区枢纽，有大量随迁长辈与陪读家庭，大厅宽敞有空调，专属停车场。"
       },
       {
         id: 3,
@@ -294,6 +293,27 @@
       },
       {
         id: 8,
+        nameZh: "清迈浸信教会 (Chiang Mai Baptist)",
+        nameEn: "Chiang Mai Baptist Church",
+        nameTh: "คริสตจักรแบ๊พติสต์เชียงใหม่",
+        addressTh: "ถนนมูลเมือง ต.ศรีภูมิ อ.เมืองเชียงใหม่",
+        lat: 18.7930,
+        lng: 98.9912,
+        district: "古城",
+        category: "传统福音派名堂",
+        tel: "",
+        languages: ["泰语", "英语", "普通话翻译"],
+        translation: "泰英双语配中文互助",
+        time: "周日 09:30 - 11:00",
+        saturdayActivity: "周六上午 10:00 泰语基础生活对话课/义工辅导",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈兰医院 1.8km",
+        kids: true,
+        tips: "古城塔佩门附近，交通方便，双条车直达，适合古城常住长辈。"
+      },
+      {
+        id: 9,
         nameZh: "生命教会清迈堂 (Life Church)",
         nameEn: "Life Church Chiang Mai",
         nameTh: "คริสตจักร ไลฟ์ เชียงใหม่",
@@ -312,6 +332,195 @@
         hospitalNear: "距清迈兰医院 1.2km",
         kids: true,
         tips: "宁曼商圈附近，年轻信徒多，提供同传耳机（前台借用）。"
+      },
+      {
+        id: 10,
+        nameZh: "城市生命教会 (Citylife Church)",
+        nameEn: "Citylife Church Chiang Mai",
+        nameTh: "คริสตจักรซิตี้ไลฟ์",
+        addressTh: "ต.ช้างเผือก อ.เมืองเชียงใหม่",
+        lat: 18.8115,
+        lng: 98.9723,
+        district: "宁曼路",
+        category: "国际跨文化堂",
+        tel: "",
+        languages: ["英语"],
+        translation: "全英文现代国际礼拜",
+        time: "周日 10:30 - 12:00",
+        saturdayActivity: "周六下午 15:00 国际青年查经与英语沙龙",
+        hasSaturday: true,
+        sojournerFriendly: false,
+        hospitalNear: "距曼谷医院清迈分院 15分钟",
+        kids: true,
+        tips: "宣教士与数字游民家庭密集，英文环境纯正。"
+      },
+      {
+        id: 11,
+        nameZh: "万国教会 (All Nations)",
+        nameEn: "All Nations Church Chiang Mai",
+        nameTh: "คริสตจักรออลเนชั่นส์ เชียงใหม่",
+        addressTh: "ถนนห้วยแก้ว ต.ช้างเผือก อ.เมืองเชียงใหม่",
+        lat: 18.8058,
+        lng: 98.9610,
+        district: "宁曼路",
+        category: "多文化国际堂",
+        tel: "",
+        languages: ["英语"],
+        translation: "国际英语崇拜",
+        time: "周日 10:00 - 11:30",
+        saturdayActivity: "",
+        hasSaturday: false,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈兰医院 2.0km",
+        kids: true,
+        tips: "靠近清迈大学与汇萃路，各国旅居家庭混合，环境开阔舒适。"
+      },
+      {
+        id: 12,
+        nameZh: "圣心主教座堂 (天主堂 Sacred Heart)",
+        nameEn: "Sacred Heart of Jesus Cathedral",
+        nameTh: "อาสนวิหารพระหฤทัย เชียงใหม่",
+        addressTh: "ถนนช้างคลาน ต.ช้างคลาน อ.เมืองเชียงใหม่",
+        lat: 18.7758,
+        lng: 99.0019,
+        district: "长康路",
+        category: "天主教主教座堂",
+        tel: "",
+        languages: ["泰语", "英语", "中文弥撒互助"],
+        translation: "主日设英语及泰语弥撒",
+        time: "周日 08:30 (泰) / 11:00 (英)",
+        saturdayActivity: "周六傍晚 18:00 主日提前弥撒 (泰/英)",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈第一综合医院 1.0km",
+        kids: false,
+        tips: "清迈天主教核心大教堂，建筑雄伟肃穆，适合天主教背景的长者安静祈祷与默想。"
+      },
+      {
+        id: 13,
+        nameZh: "西北大学团契中心 (Payap Fellowship)",
+        nameEn: "Payap Christian Fellowship",
+        nameTh: "คริสตจักรพันธกิจมหาวิทยาลัยพายัพ",
+        addressTh: "มหาวิทยาลัยพายัพ ต.หนองป่าครั่ง อ.เมืองเชียงใหม่",
+        lat: 18.7958,
+        lng: 99.0321,
+        district: "瓦特盖特",
+        category: "大学神学院团契",
+        tel: "",
+        languages: ["普通话", "英语", "泰语"],
+        translation: "中文青年与神学交流",
+        time: "周日 10:00 - 11:30",
+        saturdayActivity: "周六下午 14:00 中文神学/圣经研讨沙龙",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距 Bangkok Hospital 仅 800米 (极近)",
+        kids: false,
+        tips: "紧邻清迈曼谷医院与西北大学校园，绿地平整开阔，极适宜就医与校园散步。"
+      },
+      {
+        id: 14,
+        nameZh: "山甘烹基督徒团契 (San Kamphaeng)",
+        nameEn: "San Kamphaeng Christian Church",
+        nameTh: "คริสตจักร สันกำแพง",
+        addressTh: "ตำบลสันกำแพง อำเภอสันกำแพง เชียงใหม่",
+        lat: 18.7450,
+        lng: 99.1210,
+        district: "山甘烹",
+        category: "东郊慢调生活堂",
+        tel: "",
+        languages: ["普通话互助", "泰语"],
+        translation: "国语同工热心翻译",
+        time: "周日 09:30 - 11:00",
+        saturdayActivity: "周六上午 10:00 乡村庭院手作与田园茶歇",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距山甘烹综合医院 3km",
+        kids: true,
+        tips: "很多在清迈东郊手工艺村和山甘烹独栋别墅旅居的长辈会选择在此聚会，节奏闲适安宁。"
+      },
+      {
+        id: 15,
+        nameZh: "清迈喜乐堂 (Joy Christian Church)",
+        nameEn: "Joy Christian Church Chiang Mai",
+        nameTh: "คริสตจักรความยินดี เชียงใหม่",
+        addressTh: "ตำบลสุเทพ อำเภอเมือง เชียงใหม่",
+        lat: 18.7890,
+        lng: 98.9550,
+        district: "古城",
+        category: "华人温馨家庭堂",
+        tel: "",
+        languages: ["普通话"],
+        translation: "全中文国语讲道",
+        time: "周日 10:00 - 11:30",
+        saturdayActivity: "周六下午 14:30 旅居姐妹查经与生活互助小组",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈大学联属医院 1.0km",
+        kids: true,
+        tips: "素帖山脚下的小规模华人温馨堂会，长者与年轻人互动密切，周间常有生活探访。"
+      },
+      {
+        id: 16,
+        nameZh: "清迈纯福音教会 (Full Gospel)",
+        nameEn: "Chiang Mai Full Gospel Church",
+        nameTh: "คริสตจักรฟูลกอสเปิล เชียงใหม่",
+        addressTh: "ตำบลช้างเผือก อำเภอเมือง เชียงใหม่",
+        lat: 18.8080,
+        lng: 98.9880,
+        district: "宁曼路",
+        category: "跨国祈祷特会堂",
+        tel: "",
+        languages: ["普通话同传", "英语", "泰语"],
+        translation: "提供耳机同传",
+        time: "周日 10:00 - 11:45",
+        saturdayActivity: "周六早晨 07:00 晨星祈祷会与代祷小组",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈兰医院 1.5km",
+        kids: true,
+        tips: "大楼设施齐备有电梯，适合注重祈祷、希望为身体健康和家庭代祷的旅居信徒。"
+      },
+      {
+        id: 17,
+        nameZh: "南邦-清迈走廊宣教团契",
+        nameEn: "Grace Corridor Fellowship Hang Dong",
+        nameTh: "กลุ่มพันธกิจพระคุณ เชียงใหม่",
+        addressTh: "ถนนเชียงใหม่-ฮอด ต.หางดง เชียงใหม่",
+        lat: 18.6850,
+        lng: 98.9110,
+        district: "杭东",
+        category: "南郊国际宣教站",
+        tel: "",
+        languages: ["普通话", "英语"],
+        translation: "双语轮换",
+        time: "周日 10:30 - 12:00",
+        saturdayActivity: "周六下午 16:00 户外草地赞美与儿童自然体验",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距杭东综合医院 5分钟",
+        kids: true,
+        tips: "杭东深处近自然，适合喜欢田园、不想进城拥堵的南区旅居老人与慢调家庭。"
+      },
+      {
+        id: 18,
+        nameZh: "生命之泉清迈团契 (Spring of Life)",
+        nameEn: "Spring of Life Chiang Mai",
+        nameTh: "คริสตจักรสายน้ำแห่งชีวิต",
+        addressTh: "ตำบลป่าแดด อำเภอเมือง เชียงใหม่",
+        lat: 18.7620,
+        lng: 98.9950,
+        district: "长康路",
+        category: "萍河滨水家庭团契",
+        tel: "",
+        languages: ["普通话", "粤语"],
+        translation: "国粤双语自由交流",
+        time: "周日 10:00 - 11:30",
+        saturdayActivity: "周六下午 15:00 滨河慢走交流与家庭茶聚",
+        hasSaturday: true,
+        sojournerFriendly: true,
+        hospitalNear: "距清迈市中心医院 8分钟",
+        kids: false,
+        tips: "靠近巴达区萍河畔，风景优美环境安静，常有广东与大湾区旅居教友聚会交流。"
       }
     ];
 
@@ -386,12 +595,12 @@
     function renderCards(dataList) {
       const container = document.getElementById("churchCardList");
       const countEl = document.getElementById("churchCount");
-      countEl.textContent = `共匹配 ${dataList.length} 家堂会与周六活动`;
+      countEl.textContent = `共匹配 ${dataList.length} 家堂会与活动`;
 
       if (dataList.length === 0) {
         container.innerHTML = `
           <div class="py-12 text-center text-slate-400 text-xs">
-            <i class="fa-solid fa-compass text-2xl mb-2 text-emerald-500"></i>
+            <i class="fa-solid fa-calendar-xmark text-2xl mb-2 text-emerald-500"></i>
             <p>该偏好下暂无匹配，可切换至“全部堂会”浏览</p>
           </div>
         `;
