@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>清迈教会与团契名录 | Chiang Mai Church Finder</title>
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Leaflet 地图引擎 (完全开源、免申请API Key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; }
+    .leaflet-popup-content { margin: 8px 12px; line-height: 1.4; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen w-screen flex flex-col overflow-hidden font-sans">
+
+  <!-- 1. 顶部状态栏与操作栏 -->
+  <header class="bg-white border-b border-slate-200 z-30 shadow-sm shrink-0">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-100">
+          <i class="fa-solid fa-cross text-sm"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 text-sm md:text-base leading-tight flex items-center gap-2">
+            清迈教会地图 
+            <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.2 rounded">清迈全景试点</span>
+          </h1>
+          <p class="text-[11px] text-slate-400">陪读家庭 · 旅居青年 · 国际堂会</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button onclick="locateUser()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1">
+          <i class="fa-solid fa-location-crosshairs text-indigo-600"></i> <span class="hidden sm:inline">测距</span>定位
+        </button>
+        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1">
+          <i class="fa-solid fa-circle-plus"></i> 纠错/提报
+        </button>
+      </div>
+    </div>
+
+    <!-- 筛选面板 -->
+    <div class="bg-slate-50 border-t border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 text-xs">
+      <div class="relative flex-1 min-w-[160px]">
+        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="搜教会名、路名、泰文..." 
+          class="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          oninput="applyFilter()"
+        />
+      </div>
+
+      <select id="districtFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 focus:outline-none">
+        <option value="">所有区域</option>
+        <option value="杭东">杭东区 (Hang Dong)</option>
+        <option value="湄海">湄海区 (Mae Hia)</option>
+        <option value="古城">古城区 (Old City)</option>
+        <option value="宁曼路">宁曼路周边</option>
+        <option value="昌普区">昌普区 (Chang Phueak)</option>
+        <option value="瓦特盖特">瓦特盖特/萍河东</option>
+      </select>
+
+      <select id="langFilter" onchange="applyFilter()" class="bg-white border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 focus:outline-none">
+        <option value="">崇拜语言</option>
+        <option value="普通话">含普通话/国语</option>
+        <option value="英语">纯英语堂</option>
+        <option value="泰语">含泰语堂</option>
+      </select>
+
+      <label class="flex items-center space-x-1.5 bg-white border border-slate-200 rounded-md px-2 py-1.5 cursor-pointer hover:bg-slate-100">
+        <input type="checkbox" id="kidsFilter" onchange="applyFilter()" class="rounded text-indigo-600" />
+        <span class="text-slate-700">仅看有儿童主日学</span>
+      </label>
+    </div>
+  </header>
+
+  <!-- 2. 主屏分栏布局：左侧列表 + 右侧大地图 (手机端上下分屏) -->
+  <div class="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative">
+    
+    <!-- 左侧/底栏：可滚动教会卡片列表 -->
+    <aside class="w-full md:w-[420px] h-[45%] md:h-full bg-white border-t md:border-t-0 md:border-r border-slate-200 flex flex-col z-10 shrink-0">
+      <div class="px-4 py-2 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 bg-slate-50">
+        <span id="churchCount">正在定位教会数据...</span>
+        <span class="text-[11px] text-slate-400">点击卡片可在地图上定位</span>
+      </div>
+
+      <div id="churchCardList" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-3 space-y-2.5 no-scrollbar">
+        <!-- 动态卡片 -->
+      </div>
+    </aside>
+
+    <!-- 右侧/上栏：全功能交互式地图 -->
+    <main class="flex-1 h-[55%] md:h-full relative z-0 bg-slate-200">
+      <div id="map" class="w-full h-full"></div>
+    </main>
+  </div>
+
+  <!-- 3. 教友纠错/补充信息模态框 -->
+  <div id="feedbackModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 提交/纠错清迈教会
+        </h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <form onsubmit="handleFeedbackSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">教会名称</label>
+          <input required type="text" id="fbName" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：清迈某某教会" />
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">更正或补充内容</label>
+          <textarea required id="fbContent" rows="3" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：主日改为上午 10:30；提供 3-8 岁儿童主日学；或补充泰文地址等"></textarea>
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">您的微信/Line/邮箱（方便同工核准）</label>
+          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="选填，绝不对外公开" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600">取消</button>
+          <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">确认提交</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 业务逻辑与清迈教会高精度地理数据集 -->
+  <script>
+    const churches = [
+      {
+        id: 1,
+        nameZh: "清迈基督徒团契 (CCF) 中文堂",
+        nameEn: "Chiang Mai Christian Fellowship (CCF)",
+        nameTh: "คริสตจักรซีซีเอฟ เชียงใหม่",
+        addressTh: "194/1 หมู่ 3 ต.แม่เหียะ อ.เมืองเชียงใหม่",
+        lat: 18.7495,
+        lng: 98.9562,
+        district: "湄海",
+        category: "国际华人堂",
+        languages: ["普通话", "英语"],
+        translation: "国语主堂讲道",
+        time: "周日 10:00 - 11:30",
+        kids: true,
+        kidsAge: "2-12岁分龄托管教学",
+        tips: "靠近大华超市与湄海路口，院内有专用停车位"
+      },
+      {
+        id: 2,
+        nameZh: "清迈伯特利堂 (华侨基督教会)",
+        nameEn: "Chiang Mai Chinese Christian Church (Bethel)",
+        nameTh: "คริสตจักรจีนเชียงใหม่ เบธเอล",
+        addressTh: "ถนนช้างคลาน ต.ช้างคลาน อ.เมืองเชียงใหม่",
+        lat: 18.7781,
+        lng: 99.0012,
+        district: "古城",
+        category: "传统华人教会",
+        languages: ["普通话", "潮州话", "泰语"],
+        translation: "国语为主配泰语",
+        time: "周日 09:30 - 11:00",
+        kids: true,
+        kidsAge: "基础少儿圣经班",
+        tips: "历史悠久，长康路夜市周边，建议骑摩托车或Grab前往"
+      },
+      {
+        id: 3,
+        nameZh: "生命教会清迈堂 (Life Church)",
+        nameEn: "Life Church Chiang Mai",
+        nameTh: "คริสตจักร ไลฟ์ เชียงใหม่",
+        addressTh: "ถนนศิริมังคลาจารย์ ต.สุเทพ อ.เมืองเชียงใหม่",
+        lat: 18.7942,
+        lng: 98.9687,
+        district: "宁曼路",
+        category: "现代活力国际堂",
+        languages: ["英语"],
+        translation: "现场配中文同传耳机",
+        time: "周日 10:00 - 11:30",
+        kids: true,
+        kidsAge: "全英文互动主日学",
+        tips: "宁曼商圈附近，年轻信徒多，提供同传耳机（前台借用）"
+      },
+      {
+        id: 4,
+        nameZh: "清迈第一教会 (First Church)",
+        nameEn: "First Church of Chiang Mai (CCT)",
+        nameTh: "คริสตจักรที่หนึ่ง เชียงใหม่",
+        addressTh: "ถนนเจริญราษฎร์ ต.วัดเกต อ.เมืองเชียงใหม่",
+        lat: 18.7915,
+        lng: 99.0042,
+        district: "瓦特盖特",
+        category: "百年历史宗派堂",
+        languages: ["泰语", "英语"],
+        translation: "早堂泰语 / 午堂英语",
+        time: "周日 09:30 (泰) / 11:00 (英)",
+        kids: true,
+        kidsAge: "有基础儿童主日学",
+        tips: "平河东岸古老地标，建筑优美肃穆，适合拍照与灵修"
+      },
+      {
+        id: 5,
+        nameZh: "城市生命教会 (Citylife Church)",
+        nameEn: "Citylife Church Chiang Mai",
+        nameTh: "คริสตจักรซิตี้ไลฟ์",
+        addressTh: "ต.ช้างเผือก อ.เมืองเชียงใหม่",
+        lat: 18.8115,
+        lng: 98.9723,
+        district: "昌普区",
+        category: "国际跨文化堂",
+        languages: ["英语"],
+        translation: "全英文敬拜",
+        time: "周日 10:30 - 12:00",
+        kids: true,
+        kidsAge: "儿童与青少年活力组",
+        tips: "国际学生、数字游民和宣教士家庭活跃"
+      },
+      {
+        id: 6,
+        nameZh: "万国教会 (All Nations)",
+        nameEn: "All Nations Church Chiang Mai",
+        nameTh: "คริสตจักรออลเนชั่นส์ เชียงใหม่",
+        addressTh: "ถนนห้วยแก้ว ต.ช้างเผือก อ.เมืองเชียงใหม่",
+        lat: 18.8058,
+        lng: 98.9610,
+        district: "昌普区",
+        category: "国际教会",
+        languages: ["英语"],
+        translation: "国际敬拜",
+        time: "周日 10:00 - 11:30",
+        kids: true,
+        kidsAge: "全英文分级主日学",
+        tips: "靠近清迈大学与汇萃路，多国信徒聚集"
+      },
+      {
+        id: 7,
+        nameZh: "加略山庇护团契 (Refuge Fellowship)",
+        nameEn: "Refuge Fellowship Calvary Chapel",
+        nameTh: "คริสตจักร รีฟิวจ์ เชียงใหม่",
+        addressTh: "ต.หนองควาย อ.หางดง จ.เชียงใหม่",
+        lat: 18.7214,
+        lng: 98.9312,
+        district: "杭东",
+        category: "美式国际堂/陪读家庭",
+        languages: ["英语"],
+        translation: "现场英语逐节查经",
+        time: "周日 10:00 - 11:45",
+        kids: true,
+        kidsAge: "全体系儿童托管",
+        tips: "深处杭东国际学校走廊，欧美与华人陪读家庭多"
+      },
+      {
+        id: 8,
+        nameZh: "清迈华人基督团契 (杭东陪读点)",
+        nameEn: "Chiang Mai Chinese Family Fellowship",
+        nameTh: "กลุ่มพันธกิจจีนหางดง",
+        addressTh: "ตำบลหางดง อำเภอหางดง เชียงใหม่",
+        lat: 18.6920,
+        lng: 98.9180,
+        district: "杭东",
+        category: "华人陪读家庭团契",
+        languages: ["普通话"],
+        translation: "全中文普通话",
+        time: "周日 10:00 - 11:30",
+        kids: true,
+        kidsAge: "中国家长轮流带班互动",
+        tips: "专为普林、潘雅登等国际学校陪读妈妈建立，家庭氛围好"
+      }
+    ];
+
+    let map;
+    let markers = [];
+    let userMarker = null;
+
+    function initMap() {
+      map = L.map('map', {
+        zoomControl: false
+      }).setView([18.7883, 98.9853], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      renderMarkers(churches);
+      renderCards(churches);
+    }
+
+    function renderMarkers(dataList) {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      dataList.forEach(item => {
+        const marker = L.marker([item.lat, item.lng], {
+          title: item.nameZh
+        }).addTo(map);
+
+        const popupContent = `
+          <div class="text-xs">
+            <div class="font-bold text-slate-800 text-sm">${item.nameZh}</div>
+            <div class="text-slate-500 mb-1">${item.nameEn}</div>
+            <div class="text-indigo-600 font-medium mb-1"><i class="fa-regular fa-clock"></i> ${item.time}</div>
+            <div class="text-slate-600 mb-2">${item.translation}</div>
+            <button onclick="copyToClipboard('${item.addressTh}', '泰文打车地址')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-1 rounded text-[11px] font-medium transition mb-1">
+              <i class="fa-regular fa-copy"></i> 复制泰文打车地址
+            </button>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="block w-full text-center bg-indigo-600 text-white py-1 rounded text-[11px] font-medium">
+              Google Maps 路线导航
+            </a>
+          </div>
+        `;
+        marker.bindPopup(popupContent);
+        marker.churchId = item.id;
+        markers.push(marker);
+      });
+    }
+
+    function renderCards(dataList) {
+      const container = document.getElementById("churchCardList");
+      const countEl = document.getElementById("churchCount");
+      countEl.textContent = `清迈当前收录 ${dataList.length} 家堂会/团契`;
+
+      if (dataList.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-xs">
+            <i class="fa-regular fa-compass text-2xl mb-2"></i>
+            <p>该筛选条件下暂无教会，可点击右上角“提报”补充</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = dataList.map(item => `
+        <div id="card-${item.id}" onclick="focusChurch(${item.id})" class="bg-white border border-slate-200 rounded-xl p-3 hover:border-indigo-400 transition cursor-pointer shadow-sm">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">${item.category}</span>
+            <span class="text-xs text-slate-500 flex items-center gap-1">
+              <i class="fa-solid fa-location-dot text-rose-500"></i> ${item.district}
+              ${item.distance ? `<b class="text-indigo-600 ml-1">(${item.distance}km)</b>` : ''}
+            </span>
+          </div>
+
+          <h3 class="font-bold text-slate-900 text-sm leading-snug">${item.nameZh}</h3>
+          <p class="text-[11px] text-slate-400 mb-2">${item.nameEn}</p>
+
+          <div class="space-y-1 text-[11px] text-slate-600 mb-2.5 bg-slate-50 p-2 rounded-lg">
+            <div class="flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-slate-400 w-3.5"></i>
+              <span>${item.time}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i class="fa-solid fa-language text-slate-400 w-3.5"></i>
+              <span>${item.languages.join(" / ")} (${item.translation})</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i class="fa-solid fa-shapes text-slate-400 w-3.5"></i>
+              <span>儿童学：${item.kids ? `<span class="text-emerald-600 font-medium">${item.kidsAge}</span>` : '无分班'}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+            <button onclick="event.stopPropagation(); copyToClipboard('${item.addressTh}', '泰语打车地址')" class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] transition flex items-center justify-center gap-1" title="复制给 Grab 司机看">
+              <i class="fa-solid fa-taxi text-amber-600"></i> 复制泰文地址
+            </button>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" onclick="event.stopPropagation();" class="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] text-center font-medium transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-diamond-turn-right text-emerald-400"></i> 导航
+            </a>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function focusChurch(id) {
+      const church = churches.find(c => c.id === id);
+      const marker = markers.find(m => m.churchId === id);
+      if (church && marker) {
+        map.flyTo([church.lat, church.lng], 14, { duration: 1 });
+        marker.openPopup();
+
+        document.querySelectorAll('[id^="card-"]').forEach(el => el.classList.remove('ring-2', 'ring-indigo-500'));
+        const activeCard = document.getElementById(`card-${id}`);
+        if (activeCard) {
+          activeCard.classList.add('ring-2', 'ring-indigo-500');
+        }
+      }
+    }
+
+    function applyFilter() {
+      const search = document.getElementById("searchInput").value.trim().toLowerCase();
+      const district = document.getElementById("districtFilter").value;
+      const lang = document.getElementById("langFilter").value;
+      const kidsOnly = document.getElementById("kidsFilter").checked;
+
+      const filtered = churches.filter(item => {
+        const matchesSearch = !search || 
+          item.nameZh.toLowerCase().includes(search) || 
+          item.nameEn.toLowerCase().includes(search) || 
+          item.nameTh.toLowerCase().includes(search) || 
+          item.district.toLowerCase().includes(search);
+
+        const matchesDistrict = !district || item.district.includes(district);
+        const matchesLang = !lang || item.languages.includes(lang);
+        const matchesKids = !kidsOnly || item.kids;
+
+        return matchesSearch && matchesDistrict && matchesLang && matchesKids;
+      });
+
+      renderMarkers(filtered);
+      renderCards(filtered);
+    }
+
+    function locateUser() {
+      if (!navigator.geolocation) {
+        alert("您的浏览器不支持位置定位");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const uLat = pos.coords.latitude;
+          const uLng = pos.coords.longitude;
+
+          if (userMarker) map.removeLayer(userMarker);
+          userMarker = L.circleMarker([uLat, uLng], {
+            radius: 8,
+            fillColor: "#3b82f6",
+            color: "#ffffff",
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.9
+          }).addTo(map).bindPopup("<b>您的当前位置</b>").openPopup();
+
+          map.setView([uLat, uLng], 13);
+
+          churches.forEach(c => {
+            c.distance = calculateDistance(uLat, uLng, c.lat, c.lng).toFixed(1);
+          });
+          churches.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+          applyFilter();
+        },
+        err => {
+          alert("无法获取您的当前定位，请确认手机已开启 GPS 定位权限。");
+        }
+      );
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function copyToClipboard(text, label) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`已复制【${label}】：\n${text}\n\n可以直接粘贴给 Grab 司机或导航使用。`);
+      });
+    }
+
+    function openModal() {
+      document.getElementById("feedbackModal").classList.remove("hidden");
+    }
+    function closeModal() {
+      document.getElementById("feedbackModal").classList.add("hidden");
+    }
+    function handleFeedbackSubmit(e) {
+      e.preventDefault();
+      alert("感谢提供信息！同工核实后会同步至清迈地图数据。");
+      closeModal();
+    }
+
+    window.onload = initMap;
+  </script>
+</body>
+</html>
