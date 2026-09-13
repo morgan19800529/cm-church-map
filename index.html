@@ -22,7 +22,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen w-screen flex flex-col overflow-hidden font-sans">
 
-  <!-- 顶部状态栏与偏好切换 -->
+  <!-- 顶部状态栏 -->
   <header class="bg-white border-b border-slate-200 z-30 shadow-xs shrink-0">
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
@@ -32,7 +32,7 @@
         <div>
           <h1 class="font-bold text-slate-900 text-base md:text-lg leading-tight flex items-center gap-2">
             清迈教会与旅居生活地图
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-normal">18堂全收录</span>
+            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-normal">18堂全景版</span>
           </h1>
           <p class="text-xs text-slate-400">慢调旅居 · 周末活动 · 医疗配套 · 陪读走廊</p>
         </div>
@@ -48,13 +48,13 @@
       </div>
     </div>
 
-    <!-- 偏好模式切换 -->
+    <!-- 偏好模式切换：全部堂会放首位并默认高亮 -->
     <div class="bg-emerald-50/50 border-t border-emerald-100/60 px-4 py-1.5 flex items-center gap-2 text-xs overflow-x-auto no-scrollbar">
       <span class="text-emerald-950 font-semibold shrink-0">快捷看：</span>
-      <button onclick="setPersonaMode('saturday')" id="tab-saturday" class="px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0">🎉 周六有活动</button>
+      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-emerald-600 text-white font-medium shadow-xs shrink-0">全部堂会 (18)</button>
+      <button onclick="setPersonaMode('saturday')" id="tab-saturday" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">🎉 周六有活动</button>
       <button onclick="setPersonaMode('sojourner')" id="tab-sojourner" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">🌴 慢调旅居 (母语/近医院)</button>
       <button onclick="setPersonaMode('family')" id="tab-family" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">👨‍👩‍👧 陪读家庭 (国际学校走廊)</button>
-      <button onclick="setPersonaMode('all')" id="tab-all" class="px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 font-medium shadow-xs shrink-0">全部堂会 (18)</button>
     </div>
 
     <!-- 搜索与区域过滤 -->
@@ -130,8 +130,8 @@
           <textarea required id="fbContent" rows="3" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="如：周六上午有赞美操；主日时间改为上午 10:00 等"></textarea>
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">您的联系方式（选填）</label>
-          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="微信/Line/电话，方便同工核准信息" />
+          <label class="block font-medium text-slate-700 mb-1">您的微信/Line/电话（选填）</label>
+          <input type="text" id="fbContact" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white" placeholder="方便同工核准信息" />
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600">取消</button>
@@ -142,7 +142,7 @@
   </div>
 
   <script>
-    // 完整 18 家堂会与聚会点数据
+    // 完整 18 家独立堂会名单与完整详情
     const churches = [
       {
         id: 1,
@@ -527,7 +527,7 @@
     let map;
     let markers = [];
     let userMarker = null;
-    let currentPersona = 'saturday';
+    let currentPersona = 'all'; // 默认直接显示全部 18 家
 
     function initMap() {
       map = L.map('map', { zoomControl: false }).setView([18.7883, 98.9853], 12);
@@ -539,13 +539,13 @@
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      setPersonaMode('saturday');
+      setPersonaMode('all');
     }
 
     function setPersonaMode(mode) {
       currentPersona = mode;
       
-      ['saturday', 'sojourner', 'family', 'all'].forEach(m => {
+      ['all', 'saturday', 'sojourner', 'family'].forEach(m => {
         const btn = document.getElementById(`tab-${m}`);
         if (btn) {
           if (m === mode) {
@@ -600,7 +600,7 @@
       if (dataList.length === 0) {
         container.innerHTML = `
           <div class="py-12 text-center text-slate-400 text-xs">
-            <i class="fa-solid fa-calendar-xmark text-2xl mb-2 text-emerald-500"></i>
+            <i class="fa-solid fa-compass text-2xl mb-2 text-emerald-500"></i>
             <p>该偏好下暂无匹配，可切换至“全部堂会”浏览</p>
           </div>
         `;
